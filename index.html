@@ -10,6 +10,13 @@
     
     <link rel="stylesheet" href="style.css">
     <style>
+        /* スクロールを滑らかにする設定 */
+        html, body {
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .day:not(.empty) {
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
@@ -30,6 +37,13 @@
             font-weight: 600;
             transform: scale(0.9);                /* タップした時に少しだけ小さく */
         }
+
+        /* 無限スクロールの検知用エリア */
+        #scroll-anchor {
+            width: 100%;
+            height: 50px;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -41,27 +55,28 @@
             <div id="date-display">2026年01月01日 (木)</div>
         </header>
 
-        <!-- 下部：3ヶ月カレンダーエリア -->
-        <main class="calendar-section">
-            <div class="calendar-card" id="cal-current"></div>
-            <div class="calendar-card" id="cal-next"></div>
-            <div class="calendar-card" id="cal-after-next"></div>
+        <!-- 下部：カレンダーエリア（ここに3ヶ月ずつ追加されていきます） -->
+        <main class="calendar-section" id="calendar-container">
+            <!-- JavaScriptで動的に生成します -->
         </main>
+        
+        <!-- 下端を検知するための透明な目印 -->
+        <div id="scroll-anchor"></div>
     </div>
 
     <script>
         const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
+        
+        // 現在どこまでカレンダーを作ったかを管理する変数
+        let loadedMonthsCount = 0;
 
         // 1. 日本の祝日判定ロジック (2026年〜2027年対応)
         function checkHoliday(year, month, day) {
             const m = month + 1; // 1月〜12月に変換
-            
-            // 曜日・第何曜日の計算用
             const dateObj = new Date(year, month, day);
             const w = dateObj.getDay(); // 0:日, 1:月, ... 6:土
             const nthWeek = Math.floor((day - 1) / 7) + 1; // 第何曜日か
 
-            // --- 固定祝日の判定 ---
             if (m === 1 && day === 1) return "元日";
             if (m === 2 && day === 11) return "建国記念の日";
             if (m === 2 && day === 23) return "天皇誕生日";
@@ -73,23 +88,14 @@
             if (m === 11 && day === 3) return "文化の日";
             if (m === 11 && day === 23) return "勤労感謝の日";
 
-            // --- ハッピーマンデー（可変祝日）の判定 ---
-            if (m === 1 && w === 1 && nthWeek === 2) return "成人の日"; // 1月第2月曜
-            if (m === 7 && w === 1 && nthWeek === 3) return "海の日";   // 7月第3月曜
-            if (m === 9 && w === 1 && nthWeek === 3) return "敬老の日"; // 9月第3月曜
-            if (m === 10 && w === 1 && nthWeek === 2) return "スポーツの日"; // 10月第2月曜
+            if (m === 1 && w === 1 && nthWeek === 2) return "成人の日";
+            if (m === 7 && w === 1 && nthWeek === 3) return "海の日";
+            if (m === 9 && w === 1 && nthWeek === 3) return "敬老の日";
+            if (m === 10 && w === 1 && nthWeek === 2) return "スポーツの日";
 
-            // --- 春分の日・秋分の日の簡易計算 ---
-            if (m === 3) {
-                let syunbun = 20; // 2026, 2027年は一律20日
-                if (day === syunbun) return "春分の日";
-            }
-            if (m === 9) {
-                let syubun = 23; // 2026, 2027年は一律23日
-                if (day === syubun) return "秋分の日";
-            }
+            if (m === 3 && day === 20) return "春分の日";
+            if (m === 9 && day === 23) return "秋分の日の簡易計算";
 
-            // --- 振替休日の判定 ---
             if (w === 1) { 
                 if (checkHoliday(year, month, day - 1) && new Date(year, month, day - 1).getDay() === 0) {
                     return "振替休日";
@@ -115,9 +121,9 @@
             const day = weekDays[now.getDay()];
             document.getElementById('date-display').textContent = `${year}年${month}月${date}日 (${day})`;
 
-            // 夜中の 00:00 になったら、カレンダーの「今日」の位置を強制更新する
+            // 夜中の 00:00 になったらカレンダーを完全リセットして最新の「今月」からにする
             if (hours === '00' && minutes === '00' && now.getSeconds() === 0) {
-                renderAllCalendars();
+                resetAndRenderInitialCalendars();
             }
         }
 
@@ -187,20 +193,40 @@
             return html;
         }
 
-        function renderAllCalendars() {
+        // 5. カレンダーを次の3ヶ月分追加する関数
+        function loadNextThreeMonths() {
+            const container = document.getElementById('calendar-container');
             const now = new Date();
             const currentYear = now.getFullYear();
             const currentMonth = now.getMonth();
 
-            document.getElementById('cal-current').innerHTML = generateCalendarHTML(currentYear, currentMonth, now);
+            // 3ヶ月分ループしてカードを生成
+            for (let i = 0; i < 3; i++) {
+                const targetDate = new Date(currentYear, currentMonth + loadedMonthsCount, 1);
+                const targetYear = targetDate.getFullYear();
+                const targetMonth = targetDate.getMonth();
+
+                // カレンダーカード（箱）を作って中身を入れる
+                const card = document.createElement('div');
+                card.className = 'calendar-card';
+                // 最初（今月）だけ「今日」の判定用オブジェクトを渡す
+                const dayObj = (loadedMonthsCount === 0) ? now : null;
+                
+                card.innerHTML = generateCalendarHTML(targetYear, targetMonth, dayObj);
+                container.appendChild(card);
+
+                loadedMonthsCount++;
+            }
             
-            const nextTarget = new Date(currentYear, currentMonth + 1, 1);
-            document.getElementById('cal-next').innerHTML = generateCalendarHTML(nextTarget.getFullYear(), nextTarget.getMonth(), null);
-            
-            const afterNextTarget = new Date(currentYear, currentMonth + 2, 1);
-            document.getElementById('cal-after-next').innerHTML = generateCalendarHTML(afterNextTarget.getFullYear(), afterNextTarget.getMonth(), null);
-            
+            // 過去の不要なデータを削除
             cleanOldStorage(currentYear, currentMonth);
+        }
+
+        // 最初（または日付が変わった時）の状態に戻す
+        function resetAndRenderInitialCalendars() {
+            document.getElementById('calendar-container').innerHTML = '';
+            loadedMonthsCount = 0;
+            loadNextThreeMonths(); // 最初の3ヶ月分を読み込む
         }
 
         function cleanOldStorage(currentYear, currentMonth) {
@@ -218,16 +244,26 @@
             }
         }
 
-        // 💡 【追加】画面が非表示から表示状態（スリープ解除など）に変わった瞬間を監視する
+        // スリープ解除などの復帰時に画面をリフレッシュ
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
-                // 画面を開いた瞬間に、時計とカレンダーをタイムラグなしで強制更新！
                 updateClock();
-                renderAllCalendars();
+                resetAndRenderInitialCalendars();
             }
         });
 
-        renderAllCalendars();
+        // 💡 【重要】一番下までスクロールしたのを自動検知する仕組み（Intersection Observer）
+        const observer = new Intersection Observer((entries) => {
+            if (entries[0].isIntersecting) {
+                // 画面の下端（scroll-anchor）が見えたら、自動で次の3ヶ月分を追加
+                loadNextThreeMonths();
+            }
+        }, { rootMargin: '100px' }); // 完全に底に着く手前（100px上）でフライング気味に読み込んで滑らかにする
+
+        // 初期起動処理
+        resetAndRenderInitialCalendars();
+        observer.observe(document.getElementById('scroll-anchor'));
+        
         setInterval(updateClock, 1000);
         updateClock();
     </script>
