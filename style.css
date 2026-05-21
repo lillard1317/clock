@@ -19,6 +19,8 @@ body {
 .container {
     display: flex;
     flex-direction: column;
+    justify-content: center; /* 画面全体の縦方向も中央にバランスよく配置 */
+    align-items: center;    /* 画面全体の横方向を中央に固定 */
     width: 100%;
     height: 100%;
     padding: 4vh 4vw; 
@@ -33,6 +35,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    width: 100%;
 }
 
 #clock {
@@ -52,20 +55,23 @@ body {
 }
 
 /* ==========================================
-   下部：3ヶ月カレンダーエリア（横並び）
+   下部：3ヶ月カレンダーエリア（横並び・中央寄せ修正）
    ========================================== */
 .calendar-section {
     flex: 1;
     display: flex;
-    justify-content: space-between;
-    align-items: stretch;
+    justify-content: center; /* space-between から center に変更して中央に寄せる */
+    align-items: flex-start; /* 縦方向は上揃えにして無駄な縦伸びを防ぐ */
     gap: 3vw;
     padding-top: 4vh;
+    width: 100%;
+    max-width: 1200px; /* 横に広がりすぎないように最大幅を設定 */
 }
 
 /* カレンダー1ヶ月分を包むホワイトカード */
 .calendar-card {
     flex: 1;
+    max-width: 340px; /* ★ここがポイント！カードの横幅が広がりすぎないよう制限 */
     background-color: #ffffff;
     border-radius: 20px;
     padding: 3vh 1.5vw;
@@ -169,11 +175,14 @@ body {
 
     .calendar-section {
         flex-direction: column; 
+        align-items: center; /* スマホ時も中央に寄せる */
         gap: 20px;
         padding-top: 2vh;
     }
 
     .calendar-card {
+        max-width: 100%; /* スマホ時は画面幅いっぱいに広げる */
+        width: 100%;
         padding: 20px 15px;
     }
 
