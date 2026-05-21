@@ -115,25 +115,23 @@
             const day = weekDays[now.getDay()];
             document.getElementById('date-display').textContent = `${year}年${month}月${date}日 (${day})`;
 
-            if (hours === '00' && minutes === '00') {
+            // 夜中の 00:00 になったら、カレンダーの「今日」の位置を強制更新する
+            if (hours === '00' && minutes === '00' && now.getSeconds() === 0) {
                 renderAllCalendars();
             }
         }
 
-        // 3. 💡 【改良】タップした日付を保存・削除する関数
+        // 3. タップした日付を保存・削除する関数
         function toggleSelectDay(element, year, month, day) {
-            // 今日の日付（黒丸）は除外
             if (element.classList.contains('today')) return;
 
             element.classList.toggle('selected');
-            
-            // 保存用の固有キー（例: "date-2026-5-20"）を作る
             const key = `date-${year}-${month}-${day}`;
             
             if (element.classList.contains('selected')) {
-                localStorage.setItem(key, 'true'); // 引き出しに保存
+                localStorage.setItem(key, 'true');
             } else {
-                localStorage.removeItem(key); // 引き出しから削除
+                localStorage.removeItem(key);
             }
         }
 
@@ -166,7 +164,6 @@
                     dayClasses.push('holiday');
                 }
 
-                // 「今日」の判定
                 const isToday = currentDayObj && 
                                 year === currentDayObj.getFullYear() && 
                                 month === currentDayObj.getMonth() && 
@@ -176,7 +173,6 @@
                     dayClasses.push('today');
                 }
 
-                // 💡 【追加】過去に保存された日かチェックして、そうなら最初から選択状態にする
                 const savedKey = `date-${year}-${month}-${d}`;
                 if (!isToday && localStorage.getItem(savedKey)) {
                     dayClasses.push('selected');
@@ -184,7 +180,6 @@
 
                 const titleAttr = holidayName ? `title="${holidayName}"` : '';
 
-                // 引数に year, month, d を渡して、どの日がタップされたか判別できるように変更
                 html += `<div class="${dayClasses.join(' ')}" ${titleAttr} onclick="toggleSelectDay(this, ${year}, ${month}, ${d})">${d}</div>`;
             }
 
@@ -205,26 +200,32 @@
             const afterNextTarget = new Date(currentYear, currentMonth + 2, 1);
             document.getElementById('cal-after-next').innerHTML = generateCalendarHTML(afterNextTarget.getFullYear(), afterNextTarget.getMonth(), null);
             
-            // 💡 【追加】古い過去の保存データを自動で掃除する（iPadの容量を圧迫しないためのケア）
             cleanOldStorage(currentYear, currentMonth);
         }
 
-        // 💡 【追加】先月以前の不要になったデータを自動削除するクリーンアップ処理
         function cleanOldStorage(currentYear, currentMonth) {
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key && key.startsWith('date-')) {
-                    const parts = key.split('-'); // ["date", "year", "month", "day"]
+                    const parts = key.split('-');
                     const savedYear = parseInt(parts[1]);
                     const savedMonth = parseInt(parts[2]);
                     
-                    // 現在の年・月より古いものは削除
                     if (savedYear < currentYear || (savedYear === currentYear && savedMonth < currentMonth)) {
                         localStorage.removeItem(key);
                     }
                 }
             }
         }
+
+        // 💡 【追加】画面が非表示から表示状態（スリープ解除など）に変わった瞬間を監視する
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                // 画面を開いた瞬間に、時計とカレンダーをタイムラグなしで強制更新！
+                updateClock();
+                renderAllCalendars();
+            }
+        });
 
         renderAllCalendars();
         setInterval(updateClock, 1000);
