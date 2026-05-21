@@ -10,11 +10,47 @@
     
     <link rel="stylesheet" href="style.css">
     <style>
-        /* スクロールを滑らかにする設定 */
+        /* 横スクロールを滑らかにする設定 */
         html, body {
-            overflow-y: auto;
+            overflow-x: auto;
+            overflow-y: hidden; /* 縦スクロールは完全に禁止 */
             scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch;
+        }
+
+        /* 画面全体のレイアウト */
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: fit-content; /* 中身の横幅に合わせて自動で広がる */
+            min-width: 100vw;
+            box-sizing: border-box;
+        }
+
+        /* 時計エリアは左端に固定して表示（スクロールしてもついてくる） */
+        .clock-section {
+            position: sticky;
+            left: 0;
+            width: 100vw;
+            z-index: 10;
+            background-color: #ffffff; /* 後ろのカレンダーが透けないように */
+        }
+
+        /* カレンダーを横一列に並べるエリア */
+        .calendar-section {
+            display: flex;
+            flex-direction: row; /* 横並び */
+            align-items: flex-start;
+            padding: 20px;
+            gap: 30px;
+            overflow-y: hidden;
+        }
+
+        /* カレンダーカード1枚ごとの横幅をしっかり固定 */
+        .calendar-card {
+            flex: 0 0 320px; /* 横幅を320pxに固定して潰れないようにする */
+            box-sizing: border-box;
         }
 
         .day:not(.empty) {
@@ -25,24 +61,24 @@
         .day:not(.empty):active {
             opacity: 0.6;
         }
-        /* 祝日用のスタイル（日曜と同じ赤色を適用） */
         .day.holiday {
             color: #e34234;
         }
 
-        /* 日付をタップしたときの色（選択状態） */
+        /* 日付をタップしたときの色 */
         .day.selected {
-            background-color: #e5e5ea !important; /* Apple風のやさしいグレー */
-            color: #1d1d1f !important;            /* 文字色をはっきりさせる */
+            background-color: #e5e5ea !important;
+            color: #1d1d1f !important;
             font-weight: 600;
-            transform: scale(0.9);                /* タップした時に少しだけ小さく */
+            transform: scale(0.9);
         }
 
-        /* 無限スクロールの検知用エリア */
+        /* 右端を検知するための透明な目印 */
         #scroll-anchor {
-            width: 100%;
-            height: 50px;
-            margin-top: 20px;
+            display: inline-block;
+            width: 50px;
+            height: 100%;
+            flex: 0 0 50px;
         }
     </style>
 </head>
@@ -55,27 +91,23 @@
             <div id="date-display">2026年01月01日 (木)</div>
         </header>
 
-        <!-- 下部：カレンダーエリア（ここに3ヶ月ずつ追加されていきます） -->
+        <!-- 下部：横並びカレンダーエリア -->
         <main class="calendar-section" id="calendar-container">
-            <!-- JavaScriptで動的に生成します -->
+            <!-- ここに3ヶ月ずつ横に追加されていきます -->
         </main>
-        
-        <!-- 下端を検知するための透明な目印 -->
-        <div id="scroll-anchor"></div>
     </div>
 
     <script>
         const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
-        
-        // 現在どこまでカレンダーを作ったかを管理する変数
         let loadedMonthsCount = 0;
+        let observer = null;
 
         // 1. 日本の祝日判定ロジック (2026年〜2027年対応)
         function checkHoliday(year, month, day) {
-            const m = month + 1; // 1月〜12月に変換
+            const m = month + 1;
             const dateObj = new Date(year, month, day);
-            const w = dateObj.getDay(); // 0:日, 1:月, ... 6:土
-            const nthWeek = Math.floor((day - 1) / 7) + 1; // 第何曜日か
+            const w = dateObj.getDay();
+            const nthWeek = Math.floor((day - 1) / 7) + 1;
 
             if (m === 1 && day === 1) return "元日";
             if (m === 2 && day === 11) return "建国記念の日";
@@ -121,7 +153,6 @@
             const day = weekDays[now.getDay()];
             document.getElementById('date-display').textContent = `${year}年${month}月${date}日 (${day})`;
 
-            // 夜中の 00:00 になったらカレンダーを完全リセットして最新の「今月」からにする
             if (hours === '00' && minutes === '00' && now.getSeconds() === 0) {
                 resetAndRenderInitialCalendars();
             }
@@ -193,23 +224,25 @@
             return html;
         }
 
-        // 5. カレンダーを次の3ヶ月分追加する関数
+        // 5. カレンダーを次の3ヶ月分「右側」に追加する関数
         function loadNextThreeMonths() {
             const container = document.getElementById('calendar-container');
+            
+            // すでに右端の目印があれば、一旦取り除く（常に一番右端に移動させるため）
+            const oldAnchor = document.getElementById('scroll-anchor');
+            if (oldAnchor) oldAnchor.remove();
+
             const now = new Date();
             const currentYear = now.getFullYear();
             const currentMonth = now.getMonth();
 
-            // 3ヶ月分ループしてカードを生成
             for (let i = 0; i < 3; i++) {
                 const targetDate = new Date(currentYear, currentMonth + loadedMonthsCount, 1);
                 const targetYear = targetDate.getFullYear();
                 const targetMonth = targetDate.getMonth();
 
-                // カレンダーカード（箱）を作って中身を入れる
                 const card = document.createElement('div');
                 card.className = 'calendar-card';
-                // 最初（今月）だけ「今日」の判定用オブジェクトを渡す
                 const dayObj = (loadedMonthsCount === 0) ? now : null;
                 
                 card.innerHTML = generateCalendarHTML(targetYear, targetMonth, dayObj);
@@ -218,15 +251,26 @@
                 loadedMonthsCount++;
             }
             
-            // 過去の不要なデータを削除
+            // 新しい右端の目印を設置
+            const newAnchor = document.createElement('div');
+            newAnchor.id = 'scroll-anchor';
+            container.appendChild(newAnchor);
+
+            // 目印の監視を再設定
+            if (observer) {
+                observer.disconnect();
+                observer.observe(newAnchor);
+            }
+
             cleanOldStorage(currentYear, currentMonth);
         }
 
-        // 最初（または日付が変わった時）の状態に戻す
+        // 最初から作り直す関数
         function resetAndRenderInitialCalendars() {
             document.getElementById('calendar-container').innerHTML = '';
             loadedMonthsCount = 0;
-            loadNextThreeMonths(); // 最初の3ヶ月分を読み込む
+            loadNextThreeMonths();
+            window.scrollTo(0, 0); // スクロール位置を左端に戻す
         }
 
         function cleanOldStorage(currentYear, currentMonth) {
@@ -244,7 +288,7 @@
             }
         }
 
-        // スリープ解除などの復帰時に画面をリフレッシュ
+        // スリープからの復帰イベント
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
                 updateClock();
@@ -252,20 +296,21 @@
             }
         });
 
-        // 💡 【重要】一番下までスクロールしたのを自動検知する仕組み（Intersection Observer）
-        const observer = new Intersection Observer((entries) => {
-            if (entries[0].isIntersecting) {
-                // 画面の下端（scroll-anchor）が見えたら、自動で次の3ヶ月分を追加
-                loadNextThreeMonths();
-            }
-        }, { rootMargin: '100px' }); // 完全に底に着く手前（100px上）でフライング気味に読み込んで滑らかにする
+        // 起動時の初期化処理
+        window.addEventListener('DOMContentLoaded', () => {
+            // 右端検知用の仕組みを作って起動
+            observer = new Intersection Observer((entries) => {
+                if (entries[0].isIntersecting) {
+                    loadNextThreeMonths(); // 右端に到達したら次の3ヶ月を追加
+                }
+            }, { rootMargin: '100px', horizon: true }); // 横方向の先読み設定
 
-        // 初期起動処理
-        resetAndRenderInitialCalendars();
-        observer.observe(document.getElementById('scroll-anchor'));
-        
-        setInterval(updateClock, 1000);
-        updateClock();
+            resetAndRenderInitialCalendars();
+            
+            // 時計の開始
+            setInterval(updateClock, 1000);
+            updateClock();
+        });
     </script>
 </body>
 </html>
