@@ -2,174 +2,243 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iPad Calendar & Clock</title>
-    <!-- 外部CSSの読み込み -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Desk Clock & Calendar</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="置き時計">
+    
     <link rel="stylesheet" href="style.css">
+    <style>
+        .day:not(.empty) {
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.1s ease;
+        }
+        .day:not(.empty):active {
+            opacity: 0.6;
+        }
+        /* 祝日用のスタイル（日曜と同じ赤色を適用） */
+        .day.holiday {
+            color: #e34234;
+        }
+
+        /* 日付をタップしたときの色（選択状態） */
+        .day.selected {
+            background-color: #e5e5ea !important; /* Apple風のやさしいグレー */
+            color: #1d1d1f !important;            /* 文字色をはっきりさせる */
+            font-weight: 600;
+            transform: scale(0.9);                /* タップした時に少しだけ小さく */
+        }
+    </style>
 </head>
 <body>
 
     <div class="container">
-        
         <!-- 上部：デジタル時計エリア -->
-        <div class="clock-section">
-            <div id="clock">12:34</div>
-            <div id="date-display">2026年5月21日 木曜日</div>
-        </div>
-        
-        <!-- 下部：3ヶ月カレンダーエリア（横並び） -->
-        <div class="calendar-section">
-            
-            <!-- 1ヶ月目 -->
-            <div class="calendar-card">
-                <h2>5月</h2>
-                <div class="calendar-grid">
-                    <!-- 曜日ヘッダー -->
-                    <div class="weekday sun">日</div>
-                    <div class="weekday">月</div>
-                    <div class="weekday">火</div>
-                    <div class="weekday">水</div>
-                    <div class="weekday">木</div>
-                    <div class="weekday">金</div>
-                    <div class="weekday sat">土</div>
-                    
-                    <!-- 日付グリッド（5月1日が金曜日の場合のダミー例） -->
-                    <div class="day empty"></div>
-                    <div class="day empty"></div>
-                    <div class="day empty"></div>
-                    <div class="day empty"></div>
-                    <div class="day empty"></div>
-                    <div class="day">1</div>
-                    <div class="day sat">2</div>
-                    <div class="day sun">3</div>
-                    <div class="day">4</div>
-                    <div class="day">5</div>
-                    <div class="day">6</div>
-                    <div class="day">7</div>
-                    <div class="day">8</div>
-                    <div class="day sat">9</div>
-                    <div class="day sun">10</div>
-                    <div class="day">11</div>
-                    <div class="day">12</div>
-                    <div class="day">13</div>
-                    <div class="day">14</div>
-                    <div class="day">15</div>
-                    <div class="day sat">16</div>
-                    <div class="day sun">17</div>
-                    <div class="day">18</div>
-                    <div class="day">19</div>
-                    <div class="day">20</div>
-                    <div class="day today">21</div> <!-- 今日のハイライト -->
-                    <div class="day">22</div>
-                    <div class="day sat">23</div>
-                    <div class="day sun">24</div>
-                    <div class="day">25</div>
-                    <div class="day">26</div>
-                    <div class="day">27</div>
-                    <div class="day">28</div>
-                    <div class="day">29</div>
-                    <div class="day sat">30</div>
-                    <div class="day sun">31</div>
-                </div>
-            </div>
+        <header class="clock-section">
+            <div id="clock">00:00</div>
+            <div id="date-display">2026年01月01日 (木)</div>
+        </header>
 
-            <!-- 2ヶ月目 -->
-            <div class="calendar-card">
-                <h2>6月</h2>
-                <div class="calendar-grid">
-                    <div class="weekday sun">日</div>
-                    <div class="weekday">月</div>
-                    <div class="weekday">火</div>
-                    <div class="weekday">水</div>
-                    <div class="weekday">木</div>
-                    <div class="weekday">金</div>
-                    <div class="weekday sat">土</div>
-                    
-                    <div class="day empty"></div>
-                    <div class="day">1</div>
-                    <div class="day">2</div>
-                    <div class="day">3</div>
-                    <div class="day">4</div>
-                    <div class="day">5</div>
-                    <div class="day sat">6</div>
-                    <div class="day sun">7</div>
-                    <div class="day">8</div>
-                    <div class="day">9</div>
-                    <div class="day">10</div>
-                    <div class="day">11</div>
-                    <div class="day">12</div>
-                    <div class="day sat">13</div>
-                    <div class="day sun">14</div>
-                    <div class="day">15</div>
-                    <div class="day">16</div>
-                    <div class="day">17</div>
-                    <div class="day">18</div>
-                    <div class="day sat">19</div>
-                    <div class="day sun">20</div>
-                    <div class="day sun">21</div>
-                    <div class="day">22</div>
-                    <div class="day">23</div>
-                    <div class="day">24</div>
-                    <div class="day">25</div>
-                    <div class="day">26</div>
-                    <div class="day sat">27</div>
-                    <div class="day sun">28</div>
-                    <div class="day">29</div>
-                    <div class="day">30</div>
-                </div>
-            </div>
-
-            <!-- 3ヶ月目 -->
-            <div class="calendar-card">
-                <h2>7月</h2>
-                <div class="calendar-grid">
-                    <div class="weekday sun">日</div>
-                    <div class="weekday">月</div>
-                    <div class="weekday">火</div>
-                    <div class="weekday">水</div>
-                    <div class="weekday">木</div>
-                    <div class="weekday">金</div>
-                    <div class="weekday sat">土</div>
-                    
-                    <div class="day empty"></div>
-                    <div class="day empty"></div>
-                    <div class="day empty"></div>
-                    <div class="day">1</div>
-                    <div class="day">2</div>
-                    <div class="day">3</div>
-                    <div class="day sat">4</div>
-                    <div class="day sun">5</div>
-                    <div class="day">6</div>
-                    <div class="day">7</div>
-                    <div class="day">8</div>
-                    <div class="day">9</div>
-                    <div class="day">10</div>
-                    <div class="day sat">11</div>
-                    <div class="day sun">12</div>
-                    <div class="day">13</div>
-                    <div class="day">14</div>
-                    <div class="day">15</div>
-                    <div class="day">16</div>
-                    <div class="day">17</div>
-                    <div class="day sat">18</div>
-                    <div class="day sun">19</div>
-                    <div class="day">20</div>
-                    <div class="day">21</div>
-                    <div class="day">22</div>
-                    <div class="day">23</div>
-                    <div class="day">24</div>
-                    <div class="day sat">25</div>
-                    <div class="day sun">26</div>
-                    <div class="day">27</div>
-                    <div class="day">28</div>
-                    <div class="day">29</div>
-                    <div class="day">30</div>
-                    <div class="day sat">31</div>
-                </div>
-            </div>
-
-        </div>
+        <!-- 下部：3ヶ月カレンダーエリア -->
+        <main class="calendar-section">
+            <div class="calendar-card" id="cal-current"></div>
+            <div class="calendar-card" id="cal-next"></div>
+            <div class="calendar-card" id="cal-after-next"></div>
+        </main>
     </div>
 
+    <script>
+        const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
+        
+        // 💡 日付変更を検知するための変数（「最後に描画した日」を記憶）
+        let lastRenderedDateString = "";
+
+        // 1. 日本の祝日判定ロジック (2026年〜2027年対応)
+        function checkHoliday(year, month, day) {
+            const m = month + 1; // 1月〜12月に変換
+            
+            // 曜日・第何曜日の計算用
+            const dateObj = new Date(year, month, day);
+            const w = dateObj.getDay(); // 0:日, 1:月, ... 6:土
+            const nthWeek = Math.floor((day - 1) / 7) + 1; // 第何曜日か
+
+            // --- 固定祝日の判定 ---
+            if (m === 1 && day === 1) return "元日";
+            if (m === 2 && day === 11) return "建国記念の日";
+            if (m === 2 && day === 23) return "天皇誕生日";
+            if (m === 4 && day === 29) return "昭和の日";
+            if (m === 5 && day === 3) return "憲法記念日";
+            if (m === 5 && day === 4) return "みどりの日";
+            if (m === 5 && day === 5) return "こどもの日";
+            if (m === 8 && day === 11) return "山の日";
+            if (m === 11 && day === 3) return "文化の日";
+            if (m === 11 && day === 23) return "勤労感謝の日";
+
+            // --- ハッピーマンデー（可変祝日）の判定 ---
+            if (m === 1 && w === 1 && nthWeek === 2) return "成人の日"; // 1月第2月曜
+            if (m === 7 && w === 1 && nthWeek === 3) return "海の日";   // 7月第3月曜
+            if (m === 9 && w === 1 && nthWeek === 3) return "敬老の日"; // 9月第3月曜
+            if (m === 10 && w === 1 && nthWeek === 2) return "スポーツの日"; // 10月第2月曜
+
+            // --- 春分の日・秋分の日の簡易計算 ---
+            if (m === 3) {
+                let syunbun = 20; // 2026, 2027年は一律20日
+                if (day === syunbun) return "春分の日";
+            }
+            if (m === 9) {
+                let syubun = 23; // 2026, 2027年は一律23日
+                if (day === syubun) return "秋分の日";
+            }
+
+            // --- 振替休日の判定 ---
+            if (w === 1) { 
+                if (checkHoliday(year, month, day - 1) && new Date(year, month, day - 1).getDay() === 0) {
+                    return "振替休日";
+                }
+            }
+            if (m === 5 && day === 6 && w === 3) {
+                return "振替休日";
+            }
+
+            return null; 
+        }
+
+        // 2. 時計・日付の更新ロジック
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}`;
+
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const day = weekDays[now.getDay()];
+            document.getElementById('date-display').textContent = `${year}年${month}月${date}日 (${day})`;
+
+            // 💡 【修正・自動更新】日付（年月日）が昨日から変わったかを1秒ごとにチェック
+            const currentDateString = `${year}-${month}-${date}`;
+            if (lastRenderedDateString !== currentDateString) {
+                renderAllCalendars(); // カレンダーを新しい「今日」で描き直す
+                lastRenderedDateString = currentDateString; // 描画した日を更新
+            }
+        }
+
+        // 3. タップした日付を保存・削除する関数
+        function toggleSelectDay(element, year, month, day) {
+            // 今日の日付（黒丸）は除外
+            if (element.classList.contains('today')) return;
+
+            element.classList.toggle('selected');
+            
+            // 保存用の固有キー（例: "date-2026-5-20"）を作る
+            const key = `date-${year}-${month}-${day}`;
+            
+            if (element.classList.contains('selected')) {
+                localStorage.setItem(key, 'true'); // 引き出しに保存
+            } else {
+                localStorage.removeItem(key); // 引き出しから削除
+            }
+        }
+
+        // 4. カレンダーHTML生成ロジック
+        function generateCalendarHTML(year, month, currentDayObj) {
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+            
+            let html = `<h2>${year}年 ${month + 1}月</h2>`;
+            html += `<div class="calendar-grid">`;
+            
+            weekDays.forEach((day, idx) => {
+                const dayClass = idx === 0 ? 'sun' : (idx === 6 ? 'sat' : '');
+                html += `<div class="weekday ${dayClass}">${day}</div>`;
+            });
+
+            for (let i = 0; i < firstDay; i++) {
+                html += `<div class="day empty"></div>`;
+            }
+
+            for (let d = 1; d <= lastDate; d++) {
+                let dayClasses = ['day'];
+                const currentWeekDay = (firstDay + d - 1) % 7;
+                
+                if (currentWeekDay === 0) dayClasses.push('sun');
+                if (currentWeekDay === 6) dayClasses.push('sat');
+
+                const holidayName = checkHoliday(year, month, d);
+                if (holidayName) {
+                    dayClasses.push('holiday');
+                }
+
+                // 「今日」の判定
+                const isToday = currentDayObj && 
+                                year === currentDayObj.getFullYear() && 
+                                month === currentDayObj.getMonth() && 
+                                d === currentDayObj.getDate();
+
+                if (isToday) {
+                    dayClasses.push('today');
+                }
+
+                // 過去に保存された日かチェックして、そうなら最初から選択状態にする
+                const savedKey = `date-${year}-${month}-${d}`;
+                if (!isToday && localStorage.getItem(savedKey)) {
+                    dayClasses.push('selected');
+                }
+
+                const titleAttr = holidayName ? `title="${holidayName}"` : '';
+
+                // 引数に year, month, d を渡して、どの日がタップされたか判別できるように変更
+                html += `<div class="${dayClasses.join(' ')}" ${titleAttr} onclick="toggleSelectDay(this, ${year}, ${month}, ${d})">${d}</div>`;
+            }
+
+            html += `</div>`;
+            return html;
+        }
+
+        function renderAllCalendars() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+
+            document.getElementById('cal-current').innerHTML = generateCalendarHTML(currentYear, currentMonth, now);
+            
+            const nextTarget = new Date(currentYear, currentMonth + 1, 1);
+            document.getElementById('cal-next').innerHTML = generateCalendarHTML(nextTarget.getFullYear(), nextTarget.getMonth(), null);
+            
+            const afterNextTarget = new Date(currentYear, currentMonth + 2, 1);
+            document.getElementById('cal-after-next').innerHTML = generateCalendarHTML(afterNextTarget.getFullYear(), afterNextTarget.getMonth(), null);
+            
+            // 古い過去の保存データを自動で掃除する（iPadの容量を圧迫しないためのケア）
+            cleanOldStorage(currentYear, currentMonth);
+        }
+
+        // 先月以前の不要になったデータを自動削除するクリーンアップ処理
+        function cleanOldStorage(currentYear, currentMonth) {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('date-')) {
+                    const parts = key.split('-'); // ["date", "year", "month", "day"]
+                    const savedYear = parseInt(parts[1]);
+                    const savedMonth = parseInt(parts[2]);
+                    
+                    // 現在の年・月より古いものは削除
+                    if (savedYear < currentYear || (savedYear === currentYear && savedMonth < currentMonth)) {
+                        localStorage.removeItem(key);
+                    }
+                }
+            }
+        }
+
+        // 💡 最初の起動時に「現在の日付」を変数にいれて初期化する
+        const initNow = new Date();
+        lastRenderedDateString = `${initNow.getFullYear()}-${String(initNow.getMonth() + 1).padStart(2, '0')}-${String(initNow.getDate()).padStart(2, '0')}`;
+
+        renderAllCalendars();
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
 </body>
 </html>
