@@ -8,9 +8,9 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-    background-color: #f8f9fa; /* ほんのり温かみのあるオフホワイト */
-    color: #1d1d1f; /* Appleライクな墨色 */
-    overflow: hidden;
+    background-color: #f8f9fa;
+    color: #1d1d1f;
+    overflow: hidden; /* 画面全体の余計なスクロールを完全にカット */
     width: 100vw;
     height: 100vh;
 }
@@ -19,18 +19,18 @@ body {
 .container {
     display: flex;
     flex-direction: column;
-    justify-content: center; /* 画面全体の縦方向も中央にバランスよく配置 */
-    align-items: center;    /* 画面全体の横方向を中央に固定 */
-    width: 100%;
-    height: 100%;
-    padding: 4vh 4vw; 
+    justify-content: center; /* 縦方向の中央寄せ */
+    align-items: center;    /* 横方向の中央寄せ */
+    width: 100vw;           /* ％ではなくvwで画面幅を絶対固定 */
+    height: 100vh;          /* ％ではなくvhで画面高さを絶対固定 */
+    padding: 4vh 2vw; 
 }
 
 /* ==========================================
    上部：デジタル時計エリア
    ========================================== */
 .clock-section {
-    flex: 0 0 32vh;
+    flex: 0 0 30vh; /* 少し高さを抑えてカレンダーのスペースを確保 */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -55,84 +55,87 @@ body {
 }
 
 /* ==========================================
-   下部：3ヶ月カレンダーエリア（横並び・中央寄せ修正）
+   下部：3ヶ月カレンダーエリア（中央配置の決定版）
    ========================================== */
 .calendar-section {
     flex: 1;
     display: flex;
-    justify-content: center; /* space-between から center に変更して中央に寄せる */
-    align-items: flex-start; /* 縦方向は上揃えにして無駄な縦伸びを防ぐ */
-    gap: 3vw;
-    padding-top: 4vh;
-    width: 100%;
-    max-width: 1200px; /* 横に広がりすぎないように最大幅を設定 */
+    justify-content: flex-start; /* ★重要：画面幅を超えた時の中央バグを防ぐ */
+    align-items: flex-start;
+    gap: 2vw;
+    padding: 2vh 0;
+    
+    /* ↓ここが中央寄せのマジックです */
+    width: max-content;      /* 中身（3枚分）の合計ぴったりに自身の横幅を設定 */
+    max-width: 100%;         /* ただし、親（画面）の幅は絶対に超えない */
+    margin: 0 auto;          /* 左右の余白を自動計算して「完全にど真ん中」へ配置 */
+    
+    /* ↓iPadを縦にしてはみ出た場合のみ、指で滑らかに横スクロールさせる */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; 
 }
 
 /* カレンダー1ヶ月分を包むホワイトカード */
 .calendar-card {
-    flex: 1;
-    max-width: 340px; /* ★ここがポイント！カードの横幅が広がりすぎないよう制限 */
+    /* iPadの画面幅に応じて柔軟に変形しつつ、実用的なサイズをキープ */
+    width: 28vw; 
+    min-width: 260px;
+    max-width: 320px; 
+    
     background-color: #ffffff;
     border-radius: 20px;
-    padding: 3vh 1.5vw;
+    padding: 2.5vh 1.5vw;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
+    flex-shrink: 0; /* ★重要：画面が狭くてもカードが横に潰れるのを絶対阻止 */
 }
 
 .calendar-card h2 {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-weight: 600;
     text-align: center;
-    margin-bottom: 3vh;
+    margin-bottom: 2.5vh;
     color: #1d1d1f;
-    letter-spacing: 0.5px;
 }
 
-/* カレンダーのグリッド（7列を完全に均等に配分） */
+/* カレンダーのグリッド */
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr)); /* 幅の狂いを防ぐ設定 */
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     row-gap: 0.5vh;
     column-gap: 0;
     text-align: center;
     flex: 1;
-    align-content: start; /* 上詰めに配置して縦のズレを防ぐ */
+    align-content: start;
 }
 
-/* 曜日ヘッダーのスタイル */
 .weekday {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: #86868b;
-    padding-bottom: 1.5vh;
+    padding-bottom: 1vh;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-/* 日付のスタイル（サイズ計算によるズレを防止） */
 .day {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     font-weight: 500;
     color: #1d1d1f;
     display: flex;
     justify-content: center;
     align-items: center;
-    
-    /* 縦横のサイズをiPadの画面比率に依存させず、幅に追従する正方形にする */
     width: 100%;
     aspect-ratio: 1 / 1;
-    
     border-radius: 50%;
-    margin: 0 auto; /* グリッド内で完全に中央に寄せる */
+    margin: 0 auto;
 }
 
-/* 土日の上品な色分け */
 .sun { color: #e34234; } 
 .sat { color: #2a5caa; } 
 
-/* 今日の日付のハイライト（完璧な正円を維持） */
 .day.today {
     background-color: #1d1d1f;
     color: #ffffff !important;
@@ -152,46 +155,30 @@ body {
         overflow-y: auto;
         height: auto;
     }
-
     .container {
         padding: 4vh 5vw;
         height: auto;
+        width: 100%;
     }
-
     .clock-section {
         flex: none;
         height: auto;
         padding: 4vh 0;
     }
-
-    #clock {
-        font-size: 5rem;
-    }
-
-    #date-display {
-        font-size: 1.2rem;
-        margin-top: 10px;
-    }
-
+    #clock { font-size: 5rem; }
+    #date-display { font-size: 1.2rem; }
+    
     .calendar-section {
         flex-direction: column; 
-        align-items: center; /* スマホ時も中央に寄せる */
-        gap: 20px;
-        padding-top: 2vh;
-    }
-
-    .calendar-card {
-        max-width: 100%; /* スマホ時は画面幅いっぱいに広げる */
+        align-items: center;
         width: 100%;
+        max-width: 100%;
+        margin: 0;
+        overflow-x: visible;
+    }
+    .calendar-card {
+        width: 100%;
+        max-width: 100%;
         padding: 20px 15px;
-    }
-
-    .calendar-card h2 {
-        font-size: 1.2rem;
-        margin-bottom: 2vh;
-    }
-
-    .weekday, .day {
-        font-size: 1rem;
     }
 }
