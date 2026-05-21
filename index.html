@@ -10,12 +10,9 @@
     
     <link rel="stylesheet" href="style.css">
     <style>
-        /* 画面全体の縦スクロールを禁止、横は滑らかに動くように設定 */
+        /* 画面全体の縦スクロールを禁止 */
         html, body {
-            overflow-x: auto !important;
             overflow-y: hidden !important;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
             background-color: #ffffff;
             margin: 0;
             padding: 0;
@@ -26,35 +23,30 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            width: fit-content; /* 中身（6ヶ月分）の横幅に合わせて自動で広がる */
-            min-width: 100vw;
+            width: 100vw;
             box-sizing: border-box;
         }
 
-        /* 
-          時計エリア：
-          position: sticky を使うことで、カレンダーを右にスクロールしても
-          時計だけは画面の左端（固定位置）にずっと残り続けます。
-        */
+        /* 時計エリア：画面の中央にテキストを配置 */
         .clock-section {
-            position: sticky;
-            left: 0;
             width: 100vw;
             background-color: #ffffff;
             box-sizing: border-box;
             padding: 40px 20px 10px 20px;
-            text-align: center; /* 画面の中央に時計を配置 */
-            z-index: 10; /* カレンダーの下に潜り込まないように前面へ */
+            text-align: center; /* 時計と日付を完全に中央寄せ */
         }
 
-        /* カレンダーエリア：6ヶ月分を横一列に並べる */
+        /* カレンダーエリア：3ヶ月分のかたまりを画面の中央に配置 */
         .calendar-section {
             display: flex;
             flex-direction: row; /* 横並び */
+            justify-content: center; /* 3ヶ月分のカード全体を画面の真ん中に寄せる */
             align-items: flex-start;
-            padding: 10px 40px 20px 40px; /* 最初の余白をしっかり確保 */
+            padding: 10px 20px 20px 20px;
             gap: 40px; /* カレンダー同士のすき間 */
             box-sizing: border-box;
+            overflow-x: auto; /* 万が一画面幅からはみ出しても横スクロール可能に */
+            width: 100vw;
         }
 
         /* カレンダーカード1枚ごとの設定 */
@@ -87,15 +79,15 @@
 <body>
 
     <div class="container">
-        <!-- 上部：デジタル時計エリア（スクロールしても追従） -->
+        <!-- 上部：デジタル時計エリア（完全中央配置） -->
         <header class="clock-section">
             <div id="clock">00:00</div>
             <div id="date-display">----年--月--日 (-)</div>
         </header>
 
-        <!-- 下部：横スクロールカレンダーエリア（計6ヶ月分） -->
+        <!-- 下部：3ヶ月固定カレンダーエリア（全体を中央寄せ） -->
         <main class="calendar-section" id="calendar-container">
-            <!-- ここに「今月〜5ヶ月先」までの6枚が最初に並びます -->
+            <!-- ここに「今月・来月・再来月」の3枚だけが入ります -->
         </main>
     </div>
 
@@ -162,7 +154,7 @@
                 
                 if (dateEl) dateEl.textContent = `${year}年${month}月${date}日 (${day})`;
 
-                // 日付が変わる瞬間にカレンダーを再描画
+                // 日付が変わる瞬間（深夜0時0分0秒）にカレンダーを更新
                 if (hours === '00' && minutes === '00' && now.getSeconds() === 0) {
                     renderCalendars();
                 }
@@ -232,20 +224,20 @@
             return html;
         }
 
-        // 5. カレンダーを「きっちり6ヶ月分」だけ描画する関数
+        // 5. カレンダーを「3ヶ月分だけ」きっちり描画する関数
         function renderCalendars() {
             try {
                 const container = document.getElementById('calendar-container');
                 if (!container) return;
                 
-                container.innerHTML = ''; 
+                container.innerHTML = ''; // 一度きれいにリセット
 
                 const now = new Date();
                 const currentYear = now.getFullYear();
                 const currentMonth = now.getMonth();
 
-                // 今月(0) から 5ヶ月先(5) までの計6ヶ月分を生成
-                for (let i = 0; i < 6; i++) {
+                // 今月(0)、来月(1)、再来月(2)の3回ループ
+                for (let i = 0; i < 3; i++) {
                     const targetDate = new Date(currentYear, currentMonth + i, 1);
                     const targetYear = targetDate.getFullYear();
                     const targetMonth = targetDate.getMonth();
@@ -253,7 +245,7 @@
                     const card = document.createElement('div');
                     card.className = 'calendar-card';
                     
-                    // 当日（赤丸）の印をつけるのは「今月」のカードだけ
+                    // 今日（赤丸）の印をつけるのは「今月」のカードだけのルール
                     const dayObj = (i === 0) ? now : null;
                     
                     card.innerHTML = generateCalendarHTML(targetYear, targetMonth, dayObj);
@@ -266,7 +258,7 @@
             }
         }
 
-        // 古いlocalStorageを自動で掃除する機能
+        // 過去のメモ（古いlocalStorage）を自動で掃除する機能
         function cleanOldStorage(currentYear, currentMonth) {
             try {
                 for (let i = 0; i < localStorage.length; i++) {
@@ -276,6 +268,7 @@
                         const savedYear = parseInt(parts[1]);
                         const savedMonth = parseInt(parts[2]);
                         
+                        // 今月より前のデータは削除
                         if (savedYear < currentYear || (savedYear === currentYear && savedMonth < currentMonth)) {
                             localStorage.removeItem(key);
                         }
@@ -289,8 +282,8 @@
         // 起動時の初期化
         window.addEventListener('load', () => {
             updateClock();
-            setInterval(updateClock, 1000); 
-            renderCalendars();              
+            setInterval(updateClock, 1000); // 時計スタート
+            renderCalendars();              // カレンダー描画
         });
     </script>
 </body>
