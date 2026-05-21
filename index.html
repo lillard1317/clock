@@ -10,49 +10,6 @@
     
     <link rel="stylesheet" href="style.css">
     <style>
-        /* 横スクロールを滑らかにする設定 */
-        html, body {
-            overflow-x: auto;
-            overflow-y: hidden; /* 縦スクロールは完全に禁止 */
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        /* 画面全体のレイアウト */
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            width: fit-content; /* 中身の横幅に合わせて自動で広がる */
-            min-width: 100vw;
-            box-sizing: border-box;
-        }
-
-        /* 時計エリアは左端に固定して表示（スクロールしてもついてくる） */
-        .clock-section {
-            position: sticky;
-            left: 0;
-            width: 100vw;
-            z-index: 10;
-            background-color: #ffffff; /* 後ろのカレンダーが透けないように */
-        }
-
-        /* カレンダーを横一列に並べるエリア */
-        .calendar-section {
-            display: flex;
-            flex-direction: row; /* 横並び */
-            align-items: flex-start;
-            padding: 20px;
-            gap: 30px;
-            overflow-y: hidden;
-        }
-
-        /* カレンダーカード1枚ごとの横幅をしっかり固定 */
-        .calendar-card {
-            flex: 0 0 320px; /* 横幅を320pxに固定して潰れないようにする */
-            box-sizing: border-box;
-        }
-
         .day:not(.empty) {
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
@@ -61,24 +18,17 @@
         .day:not(.empty):active {
             opacity: 0.6;
         }
+        /* 祝日用のスタイル（日曜と同じ赤色を適用） */
         .day.holiday {
             color: #e34234;
         }
 
-        /* 日付をタップしたときの色 */
+        /* 日付をタップしたときの色（選択状態） */
         .day.selected {
-            background-color: #e5e5ea !important;
-            color: #1d1d1f !important;
+            background-color: #e5e5ea !important; /* Apple風のやさしいグレー */
+            color: #1d1d1f !important;            /* 文字色をはっきりさせる */
             font-weight: 600;
-            transform: scale(0.9);
-        }
-
-        /* 右端を検知するための透明な目印 */
-        #scroll-anchor {
-            display: inline-block;
-            width: 50px;
-            height: 100%;
-            flex: 0 0 50px;
+            transform: scale(0.9);                /* タップした時に少しだけ小さく */
         }
     </style>
 </head>
@@ -91,24 +41,27 @@
             <div id="date-display">2026年01月01日 (木)</div>
         </header>
 
-        <!-- 下部：横並びカレンダーエリア -->
-        <main class="calendar-section" id="calendar-container">
-            <!-- ここに3ヶ月ずつ横に追加されていきます -->
+        <!-- 下部：3ヶ月カレンダーエリア -->
+        <main class="calendar-section">
+            <div class="calendar-card" id="cal-current"></div>
+            <div class="calendar-card" id="cal-next"></div>
+            <div class="calendar-card" id="cal-after-next"></div>
         </main>
     </div>
 
     <script>
         const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
-        let loadedMonthsCount = 0;
-        let observer = null;
 
         // 1. 日本の祝日判定ロジック (2026年〜2027年対応)
         function checkHoliday(year, month, day) {
-            const m = month + 1;
+            const m = month + 1; // 1月〜12月に変換
+            
+            // 曜日・第何曜日の計算用
             const dateObj = new Date(year, month, day);
-            const w = dateObj.getDay();
-            const nthWeek = Math.floor((day - 1) / 7) + 1;
+            const w = dateObj.getDay(); // 0:日, 1:月, ... 6:土
+            const nthWeek = Math.floor((day - 1) / 7) + 1; // 第何曜日か
 
+            // --- 固定祝日の判定 ---
             if (m === 1 && day === 1) return "元日";
             if (m === 2 && day === 11) return "建国記念の日";
             if (m === 2 && day === 23) return "天皇誕生日";
@@ -120,14 +73,23 @@
             if (m === 11 && day === 3) return "文化の日";
             if (m === 11 && day === 23) return "勤労感謝の日";
 
-            if (m === 1 && w === 1 && nthWeek === 2) return "成人の日";
-            if (m === 7 && w === 1 && nthWeek === 3) return "海の日";
-            if (m === 9 && w === 1 && nthWeek === 3) return "敬老の日";
-            if (m === 10 && w === 1 && nthWeek === 2) return "スポーツの日";
+            // --- ハッピーマンデー（可変祝日）の判定 ---
+            if (m === 1 && w === 1 && nthWeek === 2) return "成人の日"; // 1月第2月曜
+            if (m === 7 && w === 1 && nthWeek === 3) return "海の日";   // 7月第3月曜
+            if (m === 9 && w === 1 && nthWeek === 3) return "敬老の日"; // 9月第3月曜
+            if (m === 10 && w === 1 && nthWeek === 2) return "スポーツの日"; // 10月第2月曜
 
-            if (m === 3 && day === 20) return "春分の日";
-            if (m === 9 && day === 23) return "秋分の日の簡易計算";
+            // --- 春分の日・秋分の日の簡易計算 ---
+            if (m === 3) {
+                let syunbun = 20; // 2026, 2027年は一律20日
+                if (day === syunbun) return "春分の日";
+            }
+            if (m === 9) {
+                let syubun = 23; // 2026, 2027年は一律23日
+                if (day === syubun) return "秋分の日";
+            }
 
+            // --- 振替休日の判定 ---
             if (w === 1) { 
                 if (checkHoliday(year, month, day - 1) && new Date(year, month, day - 1).getDay() === 0) {
                     return "振替休日";
@@ -153,22 +115,25 @@
             const day = weekDays[now.getDay()];
             document.getElementById('date-display').textContent = `${year}年${month}月${date}日 (${day})`;
 
-            if (hours === '00' && minutes === '00' && now.getSeconds() === 0) {
-                resetAndRenderInitialCalendars();
+            if (hours === '00' && minutes === '00') {
+                renderAllCalendars();
             }
         }
 
-        // 3. タップした日付を保存・削除する関数
+        // 3. 💡 【改良】タップした日付を保存・削除する関数
         function toggleSelectDay(element, year, month, day) {
+            // 今日の日付（黒丸）は除外
             if (element.classList.contains('today')) return;
 
             element.classList.toggle('selected');
+            
+            // 保存用の固有キー（例: "date-2026-5-20"）を作る
             const key = `date-${year}-${month}-${day}`;
             
             if (element.classList.contains('selected')) {
-                localStorage.setItem(key, 'true');
+                localStorage.setItem(key, 'true'); // 引き出しに保存
             } else {
-                localStorage.removeItem(key);
+                localStorage.removeItem(key); // 引き出しから削除
             }
         }
 
@@ -201,6 +166,7 @@
                     dayClasses.push('holiday');
                 }
 
+                // 「今日」の判定
                 const isToday = currentDayObj && 
                                 year === currentDayObj.getFullYear() && 
                                 month === currentDayObj.getMonth() && 
@@ -210,6 +176,7 @@
                     dayClasses.push('today');
                 }
 
+                // 💡 【追加】過去に保存された日かチェックして、そうなら最初から選択状態にする
                 const savedKey = `date-${year}-${month}-${d}`;
                 if (!isToday && localStorage.getItem(savedKey)) {
                     dayClasses.push('selected');
@@ -217,6 +184,7 @@
 
                 const titleAttr = holidayName ? `title="${holidayName}"` : '';
 
+                // 引数に year, month, d を渡して、どの日がタップされたか判別できるように変更
                 html += `<div class="${dayClasses.join(' ')}" ${titleAttr} onclick="toggleSelectDay(this, ${year}, ${month}, ${d})">${d}</div>`;
             }
 
@@ -224,63 +192,33 @@
             return html;
         }
 
-        // 5. カレンダーを次の3ヶ月分「右側」に追加する関数
-        function loadNextThreeMonths() {
-            const container = document.getElementById('calendar-container');
-            
-            // すでに右端の目印があれば、一旦取り除く（常に一番右端に移動させるため）
-            const oldAnchor = document.getElementById('scroll-anchor');
-            if (oldAnchor) oldAnchor.remove();
-
+        function renderAllCalendars() {
             const now = new Date();
             const currentYear = now.getFullYear();
             const currentMonth = now.getMonth();
 
-            for (let i = 0; i < 3; i++) {
-                const targetDate = new Date(currentYear, currentMonth + loadedMonthsCount, 1);
-                const targetYear = targetDate.getFullYear();
-                const targetMonth = targetDate.getMonth();
-
-                const card = document.createElement('div');
-                card.className = 'calendar-card';
-                const dayObj = (loadedMonthsCount === 0) ? now : null;
-                
-                card.innerHTML = generateCalendarHTML(targetYear, targetMonth, dayObj);
-                container.appendChild(card);
-
-                loadedMonthsCount++;
-            }
+            document.getElementById('cal-current').innerHTML = generateCalendarHTML(currentYear, currentMonth, now);
             
-            // 新しい右端の目印を設置
-            const newAnchor = document.createElement('div');
-            newAnchor.id = 'scroll-anchor';
-            container.appendChild(newAnchor);
-
-            // 目印の監視を再設定
-            if (observer) {
-                observer.disconnect();
-                observer.observe(newAnchor);
-            }
-
+            const nextTarget = new Date(currentYear, currentMonth + 1, 1);
+            document.getElementById('cal-next').innerHTML = generateCalendarHTML(nextTarget.getFullYear(), nextTarget.getMonth(), null);
+            
+            const afterNextTarget = new Date(currentYear, currentMonth + 2, 1);
+            document.getElementById('cal-after-next').innerHTML = generateCalendarHTML(afterNextTarget.getFullYear(), afterNextTarget.getMonth(), null);
+            
+            // 💡 【追加】古い過去の保存データを自動で掃除する（iPadの容量を圧迫しないためのケア）
             cleanOldStorage(currentYear, currentMonth);
         }
 
-        // 最初から作り直す関数
-        function resetAndRenderInitialCalendars() {
-            document.getElementById('calendar-container').innerHTML = '';
-            loadedMonthsCount = 0;
-            loadNextThreeMonths();
-            window.scrollTo(0, 0); // スクロール位置を左端に戻す
-        }
-
+        // 💡 【追加】先月以前の不要になったデータを自動削除するクリーンアップ処理
         function cleanOldStorage(currentYear, currentMonth) {
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key && key.startsWith('date-')) {
-                    const parts = key.split('-');
+                    const parts = key.split('-'); // ["date", "year", "month", "day"]
                     const savedYear = parseInt(parts[1]);
                     const savedMonth = parseInt(parts[2]);
                     
+                    // 現在の年・月より古いものは削除
                     if (savedYear < currentYear || (savedYear === currentYear && savedMonth < currentMonth)) {
                         localStorage.removeItem(key);
                     }
@@ -288,29 +226,9 @@
             }
         }
 
-        // スリープからの復帰イベント
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                updateClock();
-                resetAndRenderInitialCalendars();
-            }
-        });
-
-        // 起動時の初期化処理
-        window.addEventListener('DOMContentLoaded', () => {
-            // 右端検知用の仕組みを作って起動
-            observer = new Intersection Observer((entries) => {
-                if (entries[0].isIntersecting) {
-                    loadNextThreeMonths(); // 右端に到達したら次の3ヶ月を追加
-                }
-            }, { rootMargin: '100px', horizon: true }); // 横方向の先読み設定
-
-            resetAndRenderInitialCalendars();
-            
-            // 時計の開始
-            setInterval(updateClock, 1000);
-            updateClock();
-        });
+        renderAllCalendars();
+        setInterval(updateClock, 1000);
+        updateClock();
     </script>
 </body>
 </html>
